@@ -1,6 +1,11 @@
-import { Icon } from "@iconify/react";
-function App() {
-  return <>Prateek Sahu</>;
-}
+import AppRoutes from "./routes/AppRoutes";
+
+const App = () => {
+  return (
+    <>
+      <AppRoutes />
+    </>
+  );
+};
 
 export default App;
