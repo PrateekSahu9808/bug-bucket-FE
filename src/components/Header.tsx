@@ -11,11 +11,15 @@ import {
 } from "@mantine/core";
 import {
   IconBugFilled,
+  IconChartBar,
+  IconClipboard,
+  IconFolder,
   IconLogout,
   IconSettings,
+  IconTemplate,
   IconUser,
 } from "@tabler/icons-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useLogoutMutation } from "../store/authApi";
 import { useDispatch } from "react-redux";
 import { clearUserData } from "../store/userSlice";
@@ -24,6 +28,8 @@ import { userApi } from "../store/userApi";
 
 const Header = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const currentTab = location.pathname.split("/")[2];
   const [logout] = useLogoutMutation();
   const dispatch = useDispatch();
   const handleLogout = async () => {
@@ -67,17 +73,31 @@ const Header = () => {
 
       {/* Center: Tabs */}
       <Tabs
-        defaultValue="dashboard"
-        variant="outline"
+        key={location.pathname}
+        defaultValue={currentTab}
         onChange={value => {
-          if (value) navigate(`/${value}`);
+          if (value) navigate(`/home/${value}`);
         }}
       >
         <Tabs.List>
-          <Tabs.Tab value="dashboard">Dashboard</Tabs.Tab>
-          <Tabs.Tab value="projects">Projects</Tabs.Tab>
-          <Tabs.Tab value="issues">Issues</Tabs.Tab>
-          <Tabs.Tab value="teams">Teams</Tabs.Tab>
+          <Tabs.Tab value="project" leftSection={<IconFolder size={16} />}>
+            Project
+          </Tabs.Tab>
+          <Tabs.Tab value="people" leftSection={<IconUser size={16} />}>
+            People
+          </Tabs.Tab>
+          <Tabs.Tab value="templates" leftSection={<IconTemplate size={16} />}>
+            Templates
+          </Tabs.Tab>
+          <Tabs.Tab value="report" leftSection={<IconChartBar size={16} />}>
+            Reports
+          </Tabs.Tab>
+          <Tabs.Tab
+            value="configuration"
+            leftSection={<IconSettings size={12} />}
+          >
+            Configuration
+          </Tabs.Tab>
         </Tabs.List>
       </Tabs>
 
