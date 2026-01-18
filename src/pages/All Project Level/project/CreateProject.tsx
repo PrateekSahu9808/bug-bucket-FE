@@ -12,6 +12,7 @@ import {
   Divider,
   Flex,
   ActionIcon,
+  Select,
   TagsInput,
 } from "@mantine/core";
 import { IconPlus, IconTrash, IconDeviceFloppy } from "@tabler/icons-react";
@@ -83,10 +84,7 @@ const CreateProject = ({
         issueAutoAssign: false,
         issuePrefix: "PROJ",
       },
-      status: {
-        isArchived: false,
-        isActive: true,
-      },
+      currentStatus: "active",
     },
   });
 
@@ -113,8 +111,10 @@ const CreateProject = ({
         initialData.settings?.issueAutoAssign,
       );
 
-      setValue("status.isArchived", initialData.status?.isArchived);
-      setValue("status.isActive", initialData.status?.isActive);
+      // Determine current status
+      let status = "active";
+      if (initialData.status?.isArchived) status = "archived";
+      setValue("currentStatus", status);
 
       if (initialData.workflow && initialData.workflow.length > 0) {
         setWorkflow(
@@ -123,6 +123,7 @@ const CreateProject = ({
       }
     } else {
       reset(); // Clear form for create mode
+      setValue("currentStatus", "active");
       setWorkflow([
         { id: 1, name: "To Do", order: 1 },
         { id: 2, name: "In Progress", order: 2 },
@@ -154,6 +155,10 @@ const CreateProject = ({
         settings: {
           ...data.settings,
           issuePrefix: data.issuePrefix,
+        },
+        status: {
+          isActive: data.currentStatus === "active",
+          isArchived: data.currentStatus === "archived",
         },
       };
 
@@ -250,31 +255,23 @@ const CreateProject = ({
                 )}
               />
 
-              <Stack>Status</Stack>
-              <Flex gap={8}>
-                <Controller
-                  name="status.isArchived"
-                  control={control}
-                  render={({ field: { value, onChange } }) => (
-                    <Switch
-                      checked={value}
-                      onChange={onChange}
-                      label="Archived"
-                    />
-                  )}
-                />
-                <Controller
-                  name="status.isActive"
-                  control={control}
-                  render={({ field: { value, onChange } }) => (
-                    <Switch
-                      checked={value}
-                      onChange={onChange}
-                      label="Active"
-                    />
-                  )}
-                />
-              </Flex>
+              <Controller
+                name="currentStatus"
+                control={control}
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <Select
+                    label="Status"
+                    placeholder="Select status"
+                    data={[
+                      { value: "active", label: "Active" },
+                      { value: "archived", label: "Archived" },
+                    ]}
+                    {...field}
+                    allowDeselect={false}
+                  />
+                )}
+              />
 
               <Divider label="Workflow" />
               <Stack gap="sm">
