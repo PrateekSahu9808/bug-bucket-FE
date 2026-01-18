@@ -79,117 +79,121 @@ const Project = () => {
 
   return (
     <>
-      <Stack p="md" gap="lg">
-        {/* Header */}
-        <Group justify="space-between">
-          <Title order={2}>Projects</Title>
-          <Button onClick={handleCreate}>Create Project</Button>
-        </Group>
+      <Stack p="md" gap="lg" h="100%" style={{ overflow: "hidden" }}>
+        {/* Fixed Header Section */}
+        <Stack gap="md" style={{ flexShrink: 0 }}>
+          <Group justify="space-between">
+            <Title order={2}>Projects</Title>
+            <Button onClick={handleCreate}>Create Project</Button>
+          </Group>
 
-        {/* Search */}
-        <TextInput
-          placeholder="Search"
-          leftSection={<IconSearch size={16} />}
-          radius="md"
-        />
+          <TextInput
+            placeholder="Search"
+            leftSection={<IconSearch size={16} />}
+            radius="md"
+          />
+        </Stack>
 
-        {/* Projects Grid */}
-        <Grid>
-          {projects.map((project: any) => (
-            <Grid.Col span={{ base: 12, sm: 6, md: 4 }} key={project._id}>
-              <Card
-                shadow="sm"
-                padding="lg"
-                radius="md"
-                withBorder
-                style={{
-                  cursor: "pointer",
-                  transition: "transform 0.2s",
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-                onClick={() => navigate(`/home/project/${project._id}`)}
-              >
-                <Group
-                  justify="space-between"
-                  mb="xs"
-                  align="flex-start"
-                  wrap="nowrap"
+        {/* Scrollable Projects Grid */}
+        <div style={{ flex: 1, overflowY: "auto", paddingRight: "8px" }}>
+          <Grid>
+            {projects.map((project: any) => (
+              <Grid.Col span={{ base: 12, sm: 6, md: 4 }} key={project._id}>
+                <Card
+                  shadow="sm"
+                  padding="lg"
+                  radius="md"
+                  withBorder
+                  style={{
+                    cursor: "pointer",
+                    transition: "transform 0.2s",
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                  onClick={() => navigate(`/home/project/${project._id}`)}
                 >
-                  <Group align="flex-start" wrap="nowrap">
-                    <Avatar
-                      src={project.avatar}
-                      alt={project.name}
-                      radius="xl"
-                      size={50}
-                    >
-                      {project.name?.charAt(0).toUpperCase()}
-                    </Avatar>
-
-                    <div style={{ flex: 1 }}>
-                      <Text fw={500} lineClamp={1} title={project.name}>
-                        {project.name}
-                      </Text>
-                      <Tooltip
-                        label={project.description}
-                        multiline
-                        w={220}
-                        withArrow
+                  <Group
+                    justify="space-between"
+                    mb="xs"
+                    align="flex-start"
+                    wrap="nowrap"
+                  >
+                    <Group align="flex-start" wrap="nowrap">
+                      <Avatar
+                        src={project.avatar}
+                        alt={project.name}
+                        radius="xl"
+                        size={50}
                       >
-                        <Text size="sm" c="dimmed" lineClamp={2}>
-                          {project.description}
+                        {project.name?.charAt(0).toUpperCase()}
+                      </Avatar>
+
+                      <div style={{ flex: 1 }}>
+                        <Text fw={500} lineClamp={1} title={project.name}>
+                          {project.name}
                         </Text>
-                      </Tooltip>
-                    </div>
+                        <Tooltip
+                          label={project.description}
+                          multiline
+                          w={220}
+                          withArrow
+                        >
+                          <Text size="sm" c="dimmed" lineClamp={2}>
+                            {project.description}
+                          </Text>
+                        </Tooltip>
+                      </div>
+                    </Group>
+
+                    <Group gap={4} wrap="nowrap">
+                      {/* Edit icon */}
+                      <ActionIcon
+                        variant="subtle"
+                        color="blue"
+                        onClick={e => handleEdit(e, project)}
+                      >
+                        <Tooltip label="Edit" position="bottom">
+                          <IconPencil size={16} />
+                        </Tooltip>
+                      </ActionIcon>
+
+                      {/* Delete icon */}
+                      <ActionIcon
+                        variant="subtle"
+                        color="red"
+                        onClick={e => handleDelete(e, project._id)}
+                      >
+                        <Tooltip label="delete" position="bottom">
+                          <IconTrash size={16} />
+                        </Tooltip>
+                      </ActionIcon>
+                    </Group>
                   </Group>
 
-                  <Group gap={4} wrap="nowrap">
-                    {/* Edit icon */}
-                    <ActionIcon
-                      variant="subtle"
-                      color="blue"
-                      onClick={e => handleEdit(e, project)}
-                    >
-                      <Tooltip label="Edit" position="bottom">
-                        <IconPencil size={16} />
-                      </Tooltip>
-                    </ActionIcon>
+                  <Divider my="sm" />
 
-                    {/* Delete icon */}
-                    <ActionIcon
-                      variant="subtle"
-                      color="red"
-                      onClick={e => handleDelete(e, project._id)}
-                    >
-                      <Tooltip label="delete" position="bottom">
-                        <IconTrash size={16} />
-                      </Tooltip>
-                    </ActionIcon>
+                  {/* Footer info */}
+                  <Group gap="lg" mt="auto">
+                    <Group gap={4}>
+                      <IconUsers size={16} />
+                      <Text size="sm" c="dimmed">
+                        {project.members?.length || 1} members
+                      </Text>
+                    </Group>
+                    <Group gap={4}>
+                      <IconClock size={16} />
+                      <Text size="sm" c="dimmed">
+                        Updated{" "}
+                        {new Date(project.updatedAt).toLocaleDateString()}
+                      </Text>
+                    </Group>
                   </Group>
-                </Group>
-
-                <Divider my="sm" />
-
-                {/* Footer info */}
-                <Group gap="lg" mt="auto">
-                  <Group gap={4}>
-                    <IconUsers size={16} />
-                    <Text size="sm" c="dimmed">
-                      {project.members?.length || 1} members
-                    </Text>
-                  </Group>
-                  <Group gap={4}>
-                    <IconClock size={16} />
-                    <Text size="sm" c="dimmed">
-                      Updated {new Date(project.updatedAt).toLocaleDateString()}
-                    </Text>
-                  </Group>
-                </Group>
-              </Card>
-            </Grid.Col>
-          ))}
-        </Grid>
+                </Card>
+              </Grid.Col>
+            ))}
+          </Grid>
+        </div>
       </Stack>
       {isOpen && (
         <CreateProject

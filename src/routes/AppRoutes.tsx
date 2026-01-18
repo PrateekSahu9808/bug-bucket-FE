@@ -7,10 +7,10 @@ import MainLayout from "../layouts/MainLayout";
 import SignIn from "../pages/SignIn";
 import ProtectedRoutes from "./ProtectedRoutes";
 import Project from "./../pages/All Project Level/project/Project";
-import People from "../pages/All Project Level/people/People";
-import Templates from "../pages/All Project Level/templates/Templates";
-import Report from "../pages/All Project Level/report/Report";
-import Configuration from "../pages/All Project Level/configuration/Configuration";
+import People from "../pages/Individual Project Level/people/People";
+import Templates from "../pages/Individual Project Level/templates/Templates";
+import Report from "../pages/Individual Project Level/report/Report";
+import Configuration from "../pages/Individual Project Level/configuration/Configuration";
 import ProjectDashboard from "../pages/Individual Project Level/ProjectDashboard";
 
 const router = createBrowserRouter([
@@ -39,21 +39,37 @@ const router = createBrowserRouter([
         element: <ProjectDashboard />,
       },
       {
-        path: "people",
+        path: "project/:id/people",
         element: <People />,
       },
       {
-        path: "templates",
+        path: "project/:id/templates",
         element: <Templates />,
       },
       {
-        path: "report",
+        path: "project/:id/report",
         element: <Report />,
       },
       {
-        path: "configuration",
+        path: "project/:id/configuration",
         element: <Configuration />,
       },
+      // {
+      //   path: "people",
+      //   element: <People />,
+      // },
+      // {
+      //   path: "templates",
+      //   element: <Templates />,
+      // },
+      // {
+      //   path: "report",
+      //   element: <Report />,
+      // },
+      // {
+      //   path: "configuration",
+      //   element: <Configuration />,
+      // },
     ],
   },
 ]);

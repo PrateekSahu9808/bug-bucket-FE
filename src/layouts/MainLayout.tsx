@@ -7,13 +7,22 @@ const MainLayout = () => {
   return (
     <Box
       style={{
-        minHeight: "100vh",
+        height: "100vh", // Fixed height
         display: "flex",
         flexDirection: "column",
+        overflow: "hidden", // Prevent body scroll
       }}
     >
       <Header />
-      <Box component="main" style={{ flex: 1 }}>
+      <Box
+        component="main"
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
         <Outlet />
       </Box>
 

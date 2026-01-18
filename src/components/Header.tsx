@@ -58,6 +58,10 @@ const Header = () => {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
+        position: "sticky",
+        top: 0,
+        zIndex: 100,
+        backgroundColor: "white",
       }}
     >
       {/* Left: App Name */}
@@ -72,32 +76,65 @@ const Header = () => {
       </Flex>
 
       {/* Center: Tabs */}
+      {/* Center: Tabs */}
       <Tabs
-        key={location.pathname}
-        defaultValue={currentTab}
-        onChange={value => {
-          if (value) navigate(`/home/${value}`);
-        }}
+        value={location.pathname}
+        onChange={value => navigate(value as string)}
       >
         <Tabs.List>
-          <Tabs.Tab value="project" leftSection={<IconFolder size={16} />}>
-            Project
-          </Tabs.Tab>
-          <Tabs.Tab value="people" leftSection={<IconUser size={16} />}>
-            People
-          </Tabs.Tab>
-          <Tabs.Tab value="templates" leftSection={<IconTemplate size={16} />}>
-            Templates
-          </Tabs.Tab>
-          <Tabs.Tab value="report" leftSection={<IconChartBar size={16} />}>
-            Reports
-          </Tabs.Tab>
-          <Tabs.Tab
-            value="configuration"
-            leftSection={<IconSettings size={12} />}
-          >
-            Configuration
-          </Tabs.Tab>
+          {/* Global Context: Show only Projects (and maybe others later) */}
+          {!location.pathname.match(/\/home\/project\/[a-zA-Z0-9-]+/) && (
+            <>
+              <Tabs.Tab
+                value="/home/project"
+                leftSection={<IconFolder size={16} />}
+              >
+                Projects
+              </Tabs.Tab>
+            </>
+          )}
+
+          {/* Project Context: Show Board, People, Templates, Reports, Configuration */}
+          {location.pathname.match(/\/home\/project\/[a-zA-Z0-9-]+/) && (
+            <>
+              <Tabs.Tab
+                value="/home/project"
+                leftSection={<IconFolder size={16} />}
+              >
+                Projects
+              </Tabs.Tab>
+              <Tabs.Tab
+                value={`/home/project/${location.pathname.split("/")[3]}`}
+                leftSection={<IconClipboard size={16} />}
+              >
+                Board
+              </Tabs.Tab>
+              <Tabs.Tab
+                value={`/home/project/${location.pathname.split("/")[3]}/people`}
+                leftSection={<IconUser size={16} />}
+              >
+                People
+              </Tabs.Tab>
+              <Tabs.Tab
+                value={`/home/project/${location.pathname.split("/")[3]}/templates`}
+                leftSection={<IconTemplate size={16} />}
+              >
+                Templates
+              </Tabs.Tab>
+              <Tabs.Tab
+                value={`/home/project/${location.pathname.split("/")[3]}/report`}
+                leftSection={<IconChartBar size={16} />}
+              >
+                Reports
+              </Tabs.Tab>
+              <Tabs.Tab
+                value={`/home/project/${location.pathname.split("/")[3]}/configuration`}
+                leftSection={<IconSettings size={12} />}
+              >
+                Configuration
+              </Tabs.Tab>
+            </>
+          )}
         </Tabs.List>
       </Tabs>
 
