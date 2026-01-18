@@ -11,6 +11,7 @@ import People from "../pages/All Project Level/people/People";
 import Templates from "../pages/All Project Level/templates/Templates";
 import Report from "../pages/All Project Level/report/Report";
 import Configuration from "../pages/All Project Level/configuration/Configuration";
+import ProjectDashboard from "../pages/Individual Project Level/ProjectDashboard";
 
 const router = createBrowserRouter([
   {
@@ -32,6 +33,10 @@ const router = createBrowserRouter([
       {
         path: "project",
         element: <Project />,
+      },
+      {
+        path: "project/:id",
+        element: <ProjectDashboard />,
       },
       {
         path: "people",

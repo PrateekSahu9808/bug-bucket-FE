@@ -4,7 +4,6 @@ import {
   Stack,
   TextInput,
   Textarea,
-  ColorInput,
   MultiSelect,
   Group,
   Switch,
@@ -13,31 +12,53 @@ import {
   Divider,
   Flex,
   ActionIcon,
+  TagsInput,
 } from "@mantine/core";
-import { IconPlus, IconTrash } from "@tabler/icons-react";
-import { useState } from "react";
-import { useCreateProjectMutation } from "../../../store/projectApi";
-import { useForm } from "react-hook-form";
+import { IconPlus, IconTrash, IconDeviceFloppy } from "@tabler/icons-react";
+import { useState, useEffect } from "react";
+import {
+  useCreateProjectMutation,
+  useUpdateProjectMutation,
+} from "../../../store/projectApi";
+import { useGetUsersQuery } from "../../../store/userApi";
+import { useForm, Controller } from "react-hook-form";
+import { notifications } from "@mantine/notifications";
 
 interface CreateProjectProps {
   opened: boolean;
   onClose: () => void;
+  initialData?: any; // New prop for edit mode
 }
 
-const CreateProject = ({ opened, onClose }: CreateProjectProps) => {
+const CreateProject = ({
+  opened,
+  onClose,
+  initialData,
+}: CreateProjectProps) => {
+  const isEditMode = !!initialData;
   const [workflow, setWorkflow] = useState([
-    { id: 1, name: "To Do" },
-    { id: 2, name: "In Progress" },
-    { id: 3, name: "Done" },
+    { id: 1, name: "To Do", order: 1 },
+    { id: 2, name: "In Progress", order: 2 },
+    { id: 3, name: "Done", order: 3 },
   ]);
 
+  const { data: userData } = useGetUsersQuery();
+  const userOptions =
+    userData?.data?.map((u: any) => ({
+      value: u._id,
+      label: u.name,
+    })) || [];
+
   const handleAddStatus = () => {
-    setWorkflow([...workflow, { id: Date.now(), name: "" }]);
+    setWorkflow([
+      ...workflow,
+      { id: Date.now(), name: "", order: workflow.length + 1 },
+    ]);
   };
 
   const handleStatusChange = (id: number, value: string) => {
     setWorkflow(prev =>
-      prev.map(s => (s.id === id ? { ...s, name: value } : s))
+      prev.map(s => (s.id === id ? { ...s, name: value } : s)),
     );
   };
 
@@ -45,85 +66,216 @@ const CreateProject = ({ opened, onClose }: CreateProjectProps) => {
     setWorkflow(prev => prev.filter(s => s.id !== id));
   };
 
-  const [createProject] = useCreateProjectMutation();
+  const [createProject, { isLoading: isCreating }] = useCreateProjectMutation();
+  const [updateProject, { isLoading: isUpdating }] = useUpdateProjectMutation();
+
   const {
     register,
     handleSubmit,
+    control,
     reset,
+    setValue,
     formState: { errors },
-  } = useForm<any>();
+  } = useForm<any>({
+    defaultValues: {
+      settings: {
+        notificationsEnabled: true,
+        issueAutoAssign: false,
+        issuePrefix: "PROJ",
+      },
+      status: {
+        isArchived: false,
+        isActive: true,
+      },
+    },
+  });
+
+  // Populate form when initialData changes (Edit Mode)
+  useEffect(() => {
+    if (initialData) {
+      setValue("name", initialData.name);
+      setValue("description", initialData.description);
+      setValue("avatar", initialData.avatar);
+      setValue("issuePrefix", initialData.settings?.issuePrefix || "PROJ");
+
+      const memberIds = initialData.members?.map((m: any) => m.userId) || [];
+      setValue("members", memberIds);
+
+      const labelNames = initialData.labels?.map((l: any) => l.name) || [];
+      setValue("labels", labelNames);
+
+      setValue(
+        "settings.notificationsEnabled",
+        initialData.settings?.notificationsEnabled,
+      );
+      setValue(
+        "settings.issueAutoAssign",
+        initialData.settings?.issueAutoAssign,
+      );
+
+      setValue("status.isArchived", initialData.status?.isArchived);
+      setValue("status.isActive", initialData.status?.isActive);
+
+      if (initialData.workflow && initialData.workflow.length > 0) {
+        setWorkflow(
+          initialData.workflow.map((w: any) => ({ ...w, id: Math.random() })),
+        ); // refresh IDs to avoid key conflicts or use backend ID
+      }
+    } else {
+      reset(); // Clear form for create mode
+      setWorkflow([
+        { id: 1, name: "To Do", order: 1 },
+        { id: 2, name: "In Progress", order: 2 },
+        { id: 3, name: "Done", order: 3 },
+      ]);
+    }
+  }, [initialData, setValue, reset]);
 
   const onSubmit = async (data: any) => {
     try {
-      console.log("data", data);
-      const payload = {};
-      const projectRes = await createProject(payload).unwrap();
-      console.log(projectRes);
-    } catch (error) {}
+      const payload = {
+        ...data,
+        workflow: workflow.map((w, idx) => ({
+          id: w.name.toLowerCase().replace(/\s+/g, "-"),
+          name: w.name,
+          order: idx,
+          isInitial: idx === 0,
+          isFinal: idx === workflow.length - 1,
+        })),
+        members:
+          data.members?.map((userId: string) => ({
+            userId,
+            role: "viewer",
+          })) || [],
+        labels:
+          data.labels?.map((label: string) => ({
+            name: label,
+          })) || [],
+        settings: {
+          ...data.settings,
+          issuePrefix: data.issuePrefix,
+        },
+      };
+
+      if (isEditMode) {
+        await updateProject({ id: initialData._id, data: payload }).unwrap();
+        notifications.show({
+          title: "Success",
+          message: "Project updated",
+          color: "green",
+        });
+      } else {
+        await createProject(payload).unwrap();
+        notifications.show({
+          title: "Success",
+          message: "Project created",
+          color: "green",
+        });
+      }
+
+      onClose();
+      if (!isEditMode) reset();
+    } catch (error: any) {
+      notifications.show({
+        title: "Error",
+        message: error?.data?.message || "Operation failed",
+        color: "red",
+      });
+    }
   };
+
   return (
     <Portal>
       <Modal
         opened={opened}
         onClose={onClose}
-        title="Create New Project"
+        title={isEditMode ? "Edit Project" : "Create New Project"}
         centered
         size="lg"
       >
-        {" "}
         <form onSubmit={handleSubmit(onSubmit)}>
           <Card shadow="sm" padding="lg" radius="md" withBorder>
             <Stack gap="md">
               <TextInput
                 label="Project Name"
                 placeholder="Enter your project name"
-                required
-                {...register("projectName", {
+                withAsterisk
+                {...register("name", {
                   required: "Project name is required",
                 })}
-                error={errors.projectName?.message as string}
+                error={errors.name?.message as string}
               />
               <Textarea
                 label="Description"
-                placeholder="Enter you Description"
+                placeholder="Enter description"
                 {...register("description")}
               />
               <TextInput
-                label="Avatar"
-                placeholder="Enter you avatar url"
+                label="Avatar URL"
+                placeholder="https://..."
                 {...register("avatar")}
               />
-              <MultiSelect
-                label="Members"
-                placeholder="Enter Members"
-                data={[
-                  { value: "prateek", label: "Prateek Sahu" },
-                  { value: "john", label: "John Doe" },
-                  { value: "jane", label: "Jane Smith" },
-                  { value: "emma", label: "Emma Watson" },
-                ]}
-                searchable
-                clearable
-                nothingFoundMessage="no data found"
+
+              <Controller
+                name="members"
+                control={control}
+                render={({ field }) => (
+                  <MultiSelect
+                    label="Members"
+                    placeholder="Select members"
+                    data={userOptions}
+                    searchable
+                    clearable
+                    {...field}
+                  />
+                )}
               />
-              <MultiSelect
-                label="Labels"
-                placeholder="Enter Labels"
-                data={[
-                  { value: "functional testing", label: "Functional Testing" },
-                  { value: "regression issue", label: "Regression Issue" },
-                  { value: "functional issue", label: "Functional issue" },
-                  { value: "unit testing", label: "unit testing" },
-                ]}
-                searchable
-                clearable
-                nothingFoundMessage="no data found"
+
+              <Controller
+                name="labels"
+                control={control}
+                render={({ field }) => (
+                  <TagsInput
+                    label="Labels"
+                    placeholder="Enter Labels"
+                    data={[
+                      "Functional Testing",
+                      "Regression Issue",
+                      "Functional issue",
+                      "unit testing",
+                    ]}
+                    clearable
+                    {...field}
+                  />
+                )}
               />
+
               <Stack>Status</Stack>
               <Flex gap={8}>
-                <Switch value="archived" label="Archived" />
-                <Switch value="active" label="Active" />
+                <Controller
+                  name="status.isArchived"
+                  control={control}
+                  render={({ field: { value, onChange } }) => (
+                    <Switch
+                      checked={value}
+                      onChange={onChange}
+                      label="Archived"
+                    />
+                  )}
+                />
+                <Controller
+                  name="status.isActive"
+                  control={control}
+                  render={({ field: { value, onChange } }) => (
+                    <Switch
+                      checked={value}
+                      onChange={onChange}
+                      label="Active"
+                    />
+                  )}
+                />
               </Flex>
+
               <Divider label="Workflow" />
               <Stack gap="sm">
                 {workflow.map(status => (
@@ -156,24 +308,54 @@ const CreateProject = ({ opened, onClose }: CreateProjectProps) => {
               <Divider label="Settings" />
               <Stack>Settings</Stack>
               <Flex gap={8}>
-                <Switch value="notification" label="Notification" />
-                <Switch value="auto assign" label="Auto Assign" />
+                <Controller
+                  name="settings.notificationsEnabled"
+                  control={control}
+                  render={({ field: { value, onChange } }) => (
+                    <Switch
+                      checked={value}
+                      onChange={onChange}
+                      label="Notification"
+                    />
+                  )}
+                />
+                <Controller
+                  name="settings.issueAutoAssign"
+                  control={control}
+                  render={({ field: { value, onChange } }) => (
+                    <Switch
+                      checked={value}
+                      onChange={onChange}
+                      label="Auto Assign"
+                    />
+                  )}
+                />
               </Flex>
               <TextInput
                 label="Issue prefix"
-                placeholder="Enter your prefix name"
-                required
+                placeholder="PROJ"
+                withAsterisk
                 {...register("issuePrefix", {
-                  required: "issuePrefix name is required",
+                  required: "Issue prefix is required",
                 })}
-                error={errors.projectName?.message as string}
+                error={errors.issuePrefix?.message as string}
               />
               <Group justify="flex-end" mt="md">
                 <Button variant="default" onClick={onClose}>
                   Cancel
                 </Button>
-                <Button rightSection={<IconPlus size={16} />} type="submit">
-                  Create
+                <Button
+                  rightSection={
+                    isEditMode ? (
+                      <IconDeviceFloppy size={16} />
+                    ) : (
+                      <IconPlus size={16} />
+                    )
+                  }
+                  type="submit"
+                  loading={isCreating || isUpdating}
+                >
+                  {isEditMode ? "Update" : "Create"}
                 </Button>
               </Group>
             </Stack>

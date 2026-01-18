@@ -17,47 +17,65 @@ import {
   IconUsers,
   IconClock,
   IconTrash,
+  IconPencil,
 } from "@tabler/icons-react";
 import { useState } from "react";
 import CreateProject from "./CreateProject";
-
-const projects = [
-  {
-    id: 1,
-    name: "Dashboard Redesign",
-    description: "A complete overhaul of the dashboard UI",
-    members: 3,
-    updated: "2 days ago",
-    avatarColor: "blue",
-  },
-  {
-    id: 2,
-    name: "Website Revamp",
-    description: "Updating the marketing website",
-    members: 3,
-    updated: "2 days ago",
-    avatarColor: "green",
-  },
-  {
-    id: 3,
-    name: "Mobile App",
-    description: "Development of the mobile app",
-    members: 3,
-    updated: "2 days ago",
-    avatarColor: "grape",
-  },
-];
+import {
+  useGetProjectsQuery,
+  useDeleteProjectMutation,
+} from "../../../store/projectApi";
+import { notifications } from "@mantine/notifications";
+import { useNavigate } from "react-router-dom";
 
 const Project = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const handleDelete = (id: any) => {
-    console.log("Delete project:", id);
-    // Later: call API to delete project
+  const [selectedProject, setSelectedProject] = useState<any>(null); // Store selected project for edit
+  const { data, isLoading } = useGetProjectsQuery();
+  const [deleteProject] = useDeleteProjectMutation();
+  const navigate = useNavigate();
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation(); // Prevent card click
+    if (window.confirm("Are you sure you want to delete this project?")) {
+      try {
+        await deleteProject(id).unwrap();
+        notifications.show({
+          title: "Success",
+          message: "Project deleted successfully",
+          color: "green",
+        });
+      } catch (error) {
+        notifications.show({
+          title: "Error",
+          message: "Failed to delete project",
+          color: "red",
+        });
+      }
+    }
+  };
+
+  const handleEdit = (e: React.MouseEvent, project: any) => {
+    e.stopPropagation();
+    setSelectedProject(project);
+    setIsOpen(true);
+  };
+
+  const handleCreate = () => {
+    setSelectedProject(null);
+    setIsOpen(true);
   };
 
   const handleClose = () => {
     setIsOpen(false);
+    setSelectedProject(null);
   };
+
+  // if (isLoading) {
+  //   return <Text>Loading projects...</Text>;
+  // }
+  // The API returns { success: true, count: N, data: [] }
+  const projects = data?.data || [];
 
   return (
     <>
@@ -65,7 +83,7 @@ const Project = () => {
         {/* Header */}
         <Group justify="space-between">
           <Title order={2}>Projects</Title>
-          <Button onClick={() => setIsOpen(true)}>Create Project</Button>
+          <Button onClick={handleCreate}>Create Project</Button>
         </Group>
 
         {/* Search */}
@@ -77,49 +95,94 @@ const Project = () => {
 
         {/* Projects Grid */}
         <Grid>
-          {projects.map(project => (
-            <Grid.Col span={{ base: 12, sm: 6, md: 4 }} key={project.id}>
-              <Card shadow="sm" padding="lg" radius="md" withBorder>
-                {/* Card header */}
-                <Group justify="space-between">
-                  <Group>
-                    <Avatar color={project.avatarColor} radius="xl">
-                      {project.name.charAt(0)}
+          {projects.map((project: any) => (
+            <Grid.Col span={{ base: 12, sm: 6, md: 4 }} key={project._id}>
+              <Card
+                shadow="sm"
+                padding="lg"
+                radius="md"
+                withBorder
+                style={{
+                  cursor: "pointer",
+                  transition: "transform 0.2s",
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+                onClick={() => navigate(`/home/project/${project._id}`)}
+              >
+                <Group
+                  justify="space-between"
+                  mb="xs"
+                  align="flex-start"
+                  wrap="nowrap"
+                >
+                  <Group align="flex-start" wrap="nowrap">
+                    <Avatar
+                      src={project.avatar}
+                      alt={project.name}
+                      radius="xl"
+                      size={50}
+                    >
+                      {project.name?.charAt(0).toUpperCase()}
                     </Avatar>
-                    <div>
-                      <Text fw={500}>{project.name}</Text>
-                      <Text size="sm" c="dimmed">
-                        {project.description}
+
+                    <div style={{ flex: 1 }}>
+                      <Text fw={500} lineClamp={1} title={project.name}>
+                        {project.name}
                       </Text>
+                      <Tooltip
+                        label={project.description}
+                        multiline
+                        w={220}
+                        withArrow
+                      >
+                        <Text size="sm" c="dimmed" lineClamp={2}>
+                          {project.description}
+                        </Text>
+                      </Tooltip>
                     </div>
                   </Group>
 
-                  {/* Delete icon */}
-                  <ActionIcon
-                    variant="subtle"
-                    color="red"
-                    onClick={() => handleDelete(project.id)}
-                  >
-                    <Tooltip label="delete" position="bottom">
-                      <IconTrash size={16} />
-                    </Tooltip>
-                  </ActionIcon>
+                  <Group gap={4} wrap="nowrap">
+                    {/* Edit icon */}
+                    <ActionIcon
+                      variant="subtle"
+                      color="blue"
+                      onClick={e => handleEdit(e, project)}
+                    >
+                      <Tooltip label="Edit" position="bottom">
+                        <IconPencil size={16} />
+                      </Tooltip>
+                    </ActionIcon>
+
+                    {/* Delete icon */}
+                    <ActionIcon
+                      variant="subtle"
+                      color="red"
+                      onClick={e => handleDelete(e, project._id)}
+                    >
+                      <Tooltip label="delete" position="bottom">
+                        <IconTrash size={16} />
+                      </Tooltip>
+                    </ActionIcon>
+                  </Group>
                 </Group>
 
                 <Divider my="sm" />
 
                 {/* Footer info */}
-                <Group gap="lg">
+                <Group gap="lg" mt="auto">
                   <Group gap={4}>
                     <IconUsers size={16} />
                     <Text size="sm" c="dimmed">
-                      {project.members} members
+                      {project.members?.length || 1} members
                     </Text>
                   </Group>
                   <Group gap={4}>
                     <IconClock size={16} />
                     <Text size="sm" c="dimmed">
-                      Last updated {project.updated}
+                      Updated {new Date(project.updatedAt).toLocaleDateString()}
                     </Text>
                   </Group>
                 </Group>
@@ -128,7 +191,13 @@ const Project = () => {
           ))}
         </Grid>
       </Stack>
-      {isOpen && <CreateProject opened={isOpen} onClose={handleClose} />}
+      {isOpen && (
+        <CreateProject
+          opened={isOpen}
+          onClose={handleClose}
+          initialData={selectedProject}
+        />
+      )}
     </>
   );
 };
