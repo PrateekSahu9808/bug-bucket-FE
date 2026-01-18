@@ -11,7 +11,7 @@ import People from "../pages/Individual Project Level/people/People";
 import Templates from "../pages/Individual Project Level/templates/Templates";
 import Report from "../pages/Individual Project Level/report/Report";
 import Configuration from "../pages/Individual Project Level/configuration/Configuration";
-import ProjectDashboard from "../pages/Individual Project Level/ProjectDashboard";
+import ProjectDashboard from "../pages/Individual Project Level/board/ProjectDashboard";
 
 const router = createBrowserRouter([
   {

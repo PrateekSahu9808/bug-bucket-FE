@@ -1,14 +1,14 @@
 import { useParams } from "react-router-dom";
-import { useGetProjectByIdQuery } from "../../store/projectApi";
-import { useGetProjectTicketsQuery } from "../../store/api/ticketApi";
+import { useGetProjectByIdQuery } from "../../../store/projectApi";
+import { useGetProjectTicketsQuery } from "../../../store/api/ticketApi";
 import {
-  Container,
   Title,
   Text,
   Loader,
   Group,
   Button,
   Stack,
+  Center,
 } from "@mantine/core";
 import { IconPlus } from "@tabler/icons-react";
 
@@ -20,7 +20,11 @@ const ProjectDashboard = () => {
     useGetProjectTicketsQuery(id);
 
   if (projectLoading || ticketLoading) {
-    return <Loader />;
+    return (
+      <Center style={{ height: "100vh" }}>
+        <Loader size="lg" type="bars" />
+      </Center>
+    );
   }
 
   const project = projectData;
