@@ -12,6 +12,7 @@ import Templates from "../pages/Individual Project Level/templates/Templates";
 import Report from "../pages/Individual Project Level/report/Report";
 import Configuration from "../pages/Individual Project Level/configuration/Configuration";
 import ProjectDashboard from "../pages/Individual Project Level/board/ProjectDashboard";
+import TicketDetail from "../pages/Individual Project Level/board/TicketDetail";
 
 const router = createBrowserRouter([
   {
@@ -37,6 +38,10 @@ const router = createBrowserRouter([
       {
         path: "project/:id",
         element: <ProjectDashboard />,
+      },
+      {
+        path: "project/:id/ticket/:ticketId",
+        element: <TicketDetail />,
       },
       {
         path: "project/:id/people",

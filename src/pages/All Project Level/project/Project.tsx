@@ -28,6 +28,7 @@ import {
 } from "../../../store/projectApi";
 import { notifications } from "@mantine/notifications";
 import { useNavigate } from "react-router-dom";
+import { modals } from "@mantine/modals";
 
 const Project = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -38,23 +39,43 @@ const Project = () => {
   const navigate = useNavigate();
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation(); // Prevent card click
-    if (window.confirm("Are you sure you want to delete this project?")) {
-      try {
-        await deleteProject(id).unwrap();
-        notifications.show({
-          title: "Success",
-          message: "Project deleted successfully",
-          color: "green",
-        });
-      } catch (error) {
-        notifications.show({
-          title: "Error",
-          message: "Failed to delete project",
-          color: "red",
-        });
-      }
-    }
+    e.stopPropagation();
+
+    modals.openConfirmModal({
+      title: "Delete Project",
+      centered: true,
+
+      children: (
+        <Text size="sm">Are you sure you want to delete this project?</Text>
+      ),
+
+      labels: {
+        confirm: "Delete",
+        cancel: "Cancel",
+      },
+
+      confirmProps: {
+        color: "red",
+      },
+
+      onConfirm: async () => {
+        try {
+          await deleteProject(id).unwrap();
+
+          notifications.show({
+            title: "Success",
+            message: "Project deleted successfully",
+            color: "green",
+          });
+        } catch (error) {
+          notifications.show({
+            title: "Error",
+            message: "Failed to delete project",
+            color: "red",
+          });
+        }
+      },
+    });
   };
 
   const handleEdit = (e: React.MouseEvent, project: any) => {

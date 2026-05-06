@@ -6,6 +6,10 @@ export const ticketApi = apiSlice.injectEndpoints({
       query: projectId => `/tickets/project/${projectId}`,
       providesTags: ["Tickets"],
     }),
+    getTicketById: builder.query({
+      query: ticketId => `/tickets/${ticketId}`,
+      providesTags: (result, error, id) => [{ type: "Tickets", id }],
+    }),
     createTicket: builder.mutation({
       query: body => ({
         url: "/tickets",
@@ -34,6 +38,7 @@ export const ticketApi = apiSlice.injectEndpoints({
 
 export const {
   useGetProjectTicketsQuery,
+  useGetTicketByIdQuery,
   useCreateTicketMutation,
   useUpdateTicketMutation,
   useDeleteTicketMutation,
