@@ -16,6 +16,10 @@ import {
   Button,
   ActionIcon,
   Badge,
+  NumberInput,
+  Divider,
+  Switch,
+  MultiSelect,
 } from "@mantine/core";
 import { IconArrowLeft, IconDeviceFloppy } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
@@ -30,6 +34,7 @@ const TicketDetail = () => {
   const [updateTicket, { isLoading: isUpdating }] = useUpdateTicketMutation();
 
   const [formData, setFormData] = useState<any>({});
+  const [customFieldsData, setCustomFieldsData] = useState<any>({});
 
   const ticket = ticketRes?.data;
   const project = projectData;
@@ -44,6 +49,7 @@ const TicketDetail = () => {
         status: ticket.status,
         assignee: ticket.assignee?._id || null,
       });
+      setCustomFieldsData(ticket.customFields || {});
     }
   }, [ticket]);
 
@@ -75,7 +81,11 @@ const TicketDetail = () => {
 
   const handleUpdate = async () => {
     try {
-      await updateTicket({ id: ticketId as string, ...formData }).unwrap();
+      await updateTicket({ 
+        id: ticketId as string, 
+        ...formData,
+        customFields: customFieldsData
+      }).unwrap();
       notifications.show({ title: "Success", message: "Ticket updated", color: "green" });
     } catch (err) {
       notifications.show({ title: "Error", message: "Failed to update ticket", color: "red" });
@@ -85,6 +95,98 @@ const TicketDetail = () => {
   const handleChange = (field: string, value: any) => {
     setFormData((prev: any) => ({ ...prev, [field]: value }));
   };
+
+  const handleCustomFieldChange = (field: string, value: any) => {
+     setCustomFieldsData((prev: any) => ({ ...prev, [field]: value }));
+  };
+
+  const renderCustomField = (field: any) => {
+    if (!field.isEnabled) return null;
+
+    const value = customFieldsData[field.name] !== undefined ? customFieldsData[field.name] : (field.defaultValue || "");
+
+    switch (field.type) {
+      case "text":
+        return (
+          <TextInput
+            key={field.name}
+            label={field.name}
+            required={field.isRequired}
+            value={value}
+            onChange={(e) => handleCustomFieldChange(field.name, e.target.value)}
+          />
+        );
+      case "textarea":
+        return (
+          <Textarea
+            key={field.name}
+            label={field.name}
+            required={field.isRequired}
+            minRows={3}
+            value={value}
+            onChange={(e) => handleCustomFieldChange(field.name, e.target.value)}
+          />
+        );
+      case "number":
+        return (
+          <NumberInput
+             key={field.name}
+             label={field.name}
+             required={field.isRequired}
+             value={value}
+             onChange={(val) => handleCustomFieldChange(field.name, val)}
+          />
+        );
+      case "select":
+        return (
+          <Select
+             key={field.name}
+             label={field.name}
+             required={field.isRequired}
+             data={field.options || []}
+             value={value}
+             onChange={(val) => handleCustomFieldChange(field.name, val)}
+          />
+        );
+      case "multiselect":
+        return (
+          <MultiSelect
+             key={field.name}
+             label={field.name}
+             required={field.isRequired}
+             data={field.options || []}
+             value={value || []}
+             onChange={(val) => handleCustomFieldChange(field.name, val)}
+          />
+        );
+      case "toggle":
+        return (
+          <Switch
+            key={field.name}
+            label={field.name}
+            checked={!!value}
+            onChange={(e) => handleCustomFieldChange(field.name, e.currentTarget.checked)}
+            mt="xs"
+          />
+        );
+      case "date":
+        return (
+           <TextInput
+            key={field.name}
+            type="date"
+            label={field.name}
+            required={field.isRequired}
+            value={value}
+            onChange={(e) => handleCustomFieldChange(field.name, e.target.value)}
+          />
+        )
+      default:
+        return null;
+    }
+  };
+
+  // We use the snapshot saved on the ticket, so historical tickets don't break if a template changes.
+  const customFieldsToRender = ticket.templateSnapshot || [];
 
   return (
     <Stack p="md" gap="lg" h="100%">
@@ -126,6 +228,15 @@ const TicketDetail = () => {
               value={formData.description || ""}
               onChange={(e) => handleChange("description", e.target.value)}
             />
+
+            {customFieldsToRender.length > 0 && (
+               <>
+                 <Divider label="Custom Fields" labelPosition="center" />
+                 <Stack gap="md">
+                    {customFieldsToRender.map(renderCustomField)}
+                 </Stack>
+               </>
+            )}
           </Stack>
         </Grid.Col>
 

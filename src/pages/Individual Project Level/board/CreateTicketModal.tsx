@@ -6,11 +6,16 @@ import {
   Select,
   Stack,
   Group,
+  Divider,
+  NumberInput,
+  Switch,
+  MultiSelect,
 } from "@mantine/core";
 import { useForm, Controller } from "react-hook-form";
-
 import { notifications } from "@mantine/notifications";
 import { useCreateTicketMutation } from "../../../store/api/ticketApi";
+import { useGetProjectTemplatesQuery } from "../../../store/api/templateApi";
+import { useEffect, useState, useMemo } from "react";
 
 type CreateTicketModalProps = {
   opened: boolean;
@@ -18,15 +23,6 @@ type CreateTicketModalProps = {
   projectId: string;
   members: any[];
   owner: any;
-};
-
-type TicketFormData = {
-  title: string;
-  description: string;
-  type: string;
-  priority: string;
-  status: string;
-  assignee: string | null;
 };
 
 const CreateTicketModal = ({
@@ -37,19 +33,34 @@ const CreateTicketModal = ({
   owner,
 }: CreateTicketModalProps) => {
   const [createTicket, { isLoading }] = useCreateTicketMutation();
+  const { data: templateData } = useGetProjectTemplatesQuery(projectId);
+  const templates = templateData?.data || [];
+
+  const defaultTemplate = useMemo(() => templates.find((t: any) => t.isDefault) || templates[0], [templates]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (defaultTemplate && !selectedTemplateId) {
+      setSelectedTemplateId(defaultTemplate._id);
+    }
+  }, [defaultTemplate, selectedTemplateId]);
+
+  const activeTemplate = useMemo(() => templates.find((t: any) => t._id === selectedTemplateId), [templates, selectedTemplateId]);
+
   const {
     register,
     handleSubmit,
     control,
     reset,
     formState: { errors },
-  } = useForm<TicketFormData>({
+  } = useForm<any>({
     defaultValues: {
       type: "Task",
       priority: "Medium",
       status: "To Do",
       description: "",
       assignee: null,
+      customFields: {}
     },
   });
 
@@ -67,9 +78,16 @@ const CreateTicketModal = ({
     }, []) || []),
   ];
 
-  const onSubmit = async (data: TicketFormData) => {
+  const onSubmit = async (data: any) => {
     try {
-      await createTicket({ ...data, project: projectId }).unwrap();
+      const payload = {
+        ...data,
+        project: projectId,
+        template: selectedTemplateId,
+        templateSnapshot: activeTemplate?.fields || [],
+      };
+
+      await createTicket(payload).unwrap();
       notifications.show({
         title: "Success",
         message: "Ticket created successfully",
@@ -91,6 +109,112 @@ const CreateTicketModal = ({
     onClose();
   };
 
+  const renderCustomField = (field: any) => {
+    if (!field.isEnabled) return null;
+
+    const fieldName = `customFields.${field.name}`;
+    
+    switch (field.type) {
+      case "text":
+        return (
+          <TextInput
+            key={field.name}
+            label={field.name}
+            required={field.isRequired}
+            {...register(fieldName, { required: field.isRequired ? `${field.name} is required` : false })}
+          />
+        );
+      case "textarea":
+        return (
+          <Textarea
+            key={field.name}
+            label={field.name}
+            required={field.isRequired}
+            minRows={3}
+            {...register(fieldName, { required: field.isRequired ? `${field.name} is required` : false })}
+          />
+        );
+      case "number":
+        return (
+          <Controller
+            key={field.name}
+            name={fieldName}
+            control={control}
+            rules={{ required: field.isRequired ? `${field.name} is required` : false }}
+            render={({ field: controllerField }) => (
+              <NumberInput
+                label={field.name}
+                required={field.isRequired}
+                {...controllerField}
+              />
+            )}
+          />
+        );
+      case "select":
+        return (
+          <Controller
+            key={field.name}
+            name={fieldName}
+            control={control}
+            rules={{ required: field.isRequired ? `${field.name} is required` : false }}
+            render={({ field: controllerField }) => (
+              <Select
+                label={field.name}
+                required={field.isRequired}
+                data={field.options || []}
+                {...controllerField}
+              />
+            )}
+          />
+        );
+      case "multiselect":
+        return (
+          <Controller
+            key={field.name}
+            name={fieldName}
+            control={control}
+            rules={{ required: field.isRequired ? `${field.name} is required` : false }}
+            render={({ field: controllerField }) => (
+              <MultiSelect
+                label={field.name}
+                required={field.isRequired}
+                data={field.options || []}
+                {...controllerField}
+              />
+            )}
+          />
+        );
+      case "toggle":
+        return (
+          <Controller
+            key={field.name}
+            name={fieldName}
+            control={control}
+            render={({ field: controllerField }) => (
+              <Switch
+                label={field.name}
+                checked={controllerField.value || false}
+                onChange={(e) => controllerField.onChange(e.currentTarget.checked)}
+                mt="xs"
+              />
+            )}
+          />
+        );
+      case "date":
+        return (
+           <TextInput
+            key={field.name}
+            type="date"
+            label={field.name}
+            required={field.isRequired}
+            {...register(fieldName, { required: field.isRequired ? `${field.name} is required` : false })}
+          />
+        )
+      default:
+        return null;
+    }
+  };
+
   return (
     <Modal
       opened={opened}
@@ -100,12 +224,23 @@ const CreateTicketModal = ({
     >
       <form onSubmit={handleSubmit(onSubmit)}>
         <Stack gap="md">
+          {templates.length > 0 && (
+            <Select
+              label="Template"
+              data={templates.map((t: any) => ({ value: t._id, label: t.name }))}
+              value={selectedTemplateId}
+              onChange={setSelectedTemplateId}
+              allowDeselect={false}
+              description="Selecting a different template will load its custom fields."
+            />
+          )}
+
           <TextInput
             label="Title"
             placeholder="What needs to be done?"
             required
             {...register("title", { required: "Title is required" })}
-            error={errors.title?.message}
+            error={errors.title?.message as string}
           />
 
           <Textarea
@@ -167,6 +302,13 @@ const CreateTicketModal = ({
               )}
             />
           </Group>
+
+          {activeTemplate?.fields && activeTemplate.fields.length > 0 && (
+             <>
+               <Divider my="sm" label="Custom Fields" labelPosition="center" />
+               {activeTemplate.fields.map(renderCustomField)}
+             </>
+          )}
 
           <Group justify="flex-end" mt="md">
             <Button variant="subtle" onClick={handleClose} disabled={isLoading}>

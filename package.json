@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
+    "@mantine/charts": "^8.2.2",
     "@mantine/core": "^8.2.2",
     "@mantine/hooks": "^8.2.2",
     "@mantine/modals": "^8.2.2",
@@ -22,6 +23,7 @@
     "react-hook-form": "^7.62.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^6.23.1",
+    "recharts": "^2.15.4",
     "sass": "^1.89.2",
     "zod": "^4.0.14"
   },

@@ -23,6 +23,7 @@ import { useState } from "react";
 import CreateTicketModal from "./CreateTicketModal";
 import { modals } from "@mantine/modals";
 import { useNavigate } from "react-router-dom";
+import { notifications } from "@mantine/notifications";
 
 const STAGES = ["To Do", "In Progress", "Done"];
 
@@ -175,7 +176,9 @@ const ProjectDashboard = () => {
                       radius="md"
                       withBorder
                       style={{ cursor: "pointer" }}
-                      onClick={() => navigate(`/home/project/${id}/ticket/${ticket._id}`)}
+                      onClick={() =>
+                        navigate(`/home/project/${id}/ticket/${ticket._id}`)
+                      }
                     >
                       <Stack gap="xs">
                         <Group
